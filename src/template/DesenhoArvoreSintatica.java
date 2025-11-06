@@ -8,15 +8,15 @@ import parser.ast.Numero;
 
 
 public class DesenhoArvoreSintatica {
-
-
-    public static void desenhar(EngineFrame frame, Expressao e, double x, double y, double espacamento) {
+    
+    public static void desenhar(EngineFrame frame, Expressao e, 
+            double x, double y, double espacamento) {
         if (e == null) return;
 
         double raio = 25.0;
 
         Color corNo = Color.BLACK;
-        Color corBorda = Color.WHITE; // se quiser desenhar borda
+        Color corBorda = Color.WHITE;
         Color corTexto = Color.WHITE;
         Color corLigacao = Color.BLACK;
 
@@ -63,7 +63,8 @@ public class DesenhoArvoreSintatica {
         drawTextCentered(frame, "?", x, y, 14, corTexto);
     }
 
-    private static void drawTextCentered(EngineFrame frame, String text, double x, double y, int size, Color color) {
+    private static void drawTextCentered(EngineFrame frame, String text, 
+            double x, double y, int size, Color color) {
         double textWidth = frame.measureText(text, size);
         int tx = (int) Math.round(x - textWidth / 2.0);
         int ty = (int) Math.round(y + (size / 3.0));

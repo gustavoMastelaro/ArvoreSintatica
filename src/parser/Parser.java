@@ -27,6 +27,7 @@ public class Parser {
         return new Parser(expressao);
     }
 
+
     public double getResultado() {
         return resultado;
     }
