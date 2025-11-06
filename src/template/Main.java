@@ -32,7 +32,6 @@ public class Main extends EngineFrame {
                 false,
                 false
         );
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
     }
 
     @Override
@@ -113,14 +112,16 @@ public class Main extends EngineFrame {
         beginMode2D(camera);
         drawText("Visualizador de Árvore Sintática", new Vector2(50, 40), 22, BLACK);
         btnInserirExpressao.draw();
-        entradaExpressao.draw();
 
         drawText("Expressão: " + (expressao.isEmpty() ? "Nenhuma" : expressao), new Vector2(50, 180), 18, BLACK);
-        drawText("Mensagem: " + mensagem, new Vector2(50, 210), 16, BLACK);
+        drawText("" + mensagem, new Vector2(50, 210), 16, BLACK);
 
         if (raiz != null) {
             drawArvore(raiz, getWidth() / 2.0, 300, getWidth() / 4.0);
         }
+       
+        entradaExpressao.draw();
+        endMode2D();
     }
 
     private static class Node {
@@ -216,11 +217,11 @@ public class Main extends EngineFrame {
         return new Node(expr);
     }
 
-    private String removeParentesesExternos(String expr) {
-        while (expr.startsWith("(") && expr.endsWith(")") && corresponde(expr)) {
-            expr = expr.substring(1, expr.length() - 1);
+    private String removeParentesesExternos(String expressao) {
+        while (expressao.startsWith("(") && expressao.endsWith(")") && corresponde(expressao)) {
+            expressao = expressao.substring(1, expressao.length() - 1);
         }
-        return expr;
+        return expressao;
     }
 
     private boolean corresponde(String expr) {
