@@ -15,7 +15,7 @@ public class Main extends EngineFrame {
 
     private Image logo;
     private Expressao raiz;
-    private String expressaoAtual = "";
+    private String expressaoAtual;
 
     public Main() {
         super(
@@ -153,7 +153,7 @@ public class Main extends EngineFrame {
         double largura = measureText(text, size);
         int tx = (int) Math.round(x - largura / 2.0);
         int ty = (int) Math.round(y + size / 3.0 - 2);
-        drawText(text, tx, ty, size, color);
+        drawText(text, tx,  ty - 22, size, color);
     }
 
     public static void main(String[] args) {
