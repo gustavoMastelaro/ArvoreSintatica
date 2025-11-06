@@ -3,178 +3,258 @@ package template;
 import br.com.davidbuzatto.jsge.core.Camera2D;
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.geom.Rectangle;
+import br.com.davidbuzatto.jsge.imgui.GuiButton;
+import br.com.davidbuzatto.jsge.imgui.GuiInputDialog;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
-import javax.swing.JOptionPane;
-import parser.Parser;
-import parser.ast.Expressao;
-import parser.ast.ExpressaoBinaria;
-import parser.ast.Numero;
 
 public class Main extends EngineFrame {
-    
+
     private Rectangle focoBoundary;
     private Camera foco;
     private Camera2D camera;
-    private Expressao raiz;
-    private String expressaoAtual;
+    private GuiButton btnInserirExpressao;
+    private GuiInputDialog entradaExpressao;
+    private String expressao;
+    private Node raiz;
+    private String mensagem;
 
     public Main() {
         super(
-                800, 600, "Arvore Sintatica", 60,
-                true, false, false, false, false, false
+                800,
+                600,
+                "Árvore Sintática",
+                60,
+                true,
+                false,
+                false,
+                false,
+                false,
+                false
         );
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
     }
 
     @Override
     public void create() {
-        expressaoAtual = "nenhuma expressao";
-        foco = new Camera(new Vector2 ((getScreenWidth() - 5) / 2, (getScreenHeight() - 5 ) / 2), 
-                new Vector2 (10,10), 400);
-        
+        btnInserirExpressao = new GuiButton(50, 100, 200, 40, "Inserir Expressão", this);
+        entradaExpressao = new GuiInputDialog(
+                "Entrada de Expressão",
+                "Digite uma expressão (ex: (3+4)*2 )",
+                "Fechar",
+                true,
+                this
+        );
+        mensagem = "Pressione o botão acima para inserir uma expressão.";
+        expressao = "";
+        foco = new Camera(new Vector2((getScreenWidth() - 5) / 2, (getScreenHeight() - 5) / 2),
+                new Vector2(10, 10), 400);
+
         camera = new Camera2D();
-        focoBoundary = new Rectangle(0,0,getScreenWidth(), getScreenHeight());
-    }
-
-    private void solicitarExpressao() {
-        String expr = JOptionPane.showInputDialog("Digite a expressao:");
-
-        if (expr == null || expr.isBlank()) {
-            expressaoAtual = "";
-            raiz = null;
-            return;
-        }
-
-        expressaoAtual = expr;
-        Parser parser = Parser.parse(expr);
-        raiz = obterExpressao(parser);
-
-        if (raiz == null) {
-            JOptionPane.showMessageDialog(null, "Erro: Expressão inválida");
-            expressaoAtual = "";
-        }
-    }
-
-    private Expressao obterExpressao(Parser parser) {
-        return parser.getExpressaoResultante();
+        focoBoundary = new Rectangle(0, 0, getScreenWidth(), getScreenHeight());
     }
 
     @Override
     public void update(double delta) {
-        if (isKeyPressed(KEY_ENTER)) {
-            solicitarExpressao();
-        }
-        foco.update( delta, focoBoundary, this );
-        
-        if ( isKeyDown( KEY_DELETE ) ) {
+
+        btnInserirExpressao.update(delta);
+        entradaExpressao.update(delta);
+
+        foco.update(delta, focoBoundary, this);
+
+        if (isKeyDown(KEY_DELETE)) {
             camera.rotation--;
-        } else if ( isKeyDown( KEY_PAGE_DOWN ) ) {
+        } else if (isKeyDown(KEY_PAGE_DOWN)) {
             camera.rotation++;
         }
-        
-        if ( isKeyDown( KEY_KP_ADD ) || isKeyDown( KEY_EQUAL ) ) {
+
+        if (isKeyDown(KEY_KP_ADD) || isKeyDown(KEY_EQUAL)) {
             camera.zoom += 0.01;
-        } else if ( isKeyDown( KEY_KP_SUBTRACT ) || isKeyDown( KEY_MINUS ) ) {
+        } else if (isKeyDown(KEY_KP_SUBTRACT) || isKeyDown(KEY_MINUS)) {
             camera.zoom -= 0.01;
-            if ( camera.zoom < 0.1 ) {
+            if (camera.zoom < 0.1) {
                 camera.zoom = 0.1;
             }
         }
-        
-        if ( isKeyPressed( KEY_R ) ) {
+
+        if (isKeyPressed(KEY_R)) {
             camera.rotation = 0;
             camera.zoom = 1;
             foco.pos.x = getScreenWidth() / 2;
             foco.pos.y = getScreenHeight() / 2;
         }
-        
+
         atualizarCamera();
+
+        if (btnInserirExpressao.isMousePressed()) {
+            entradaExpressao.show();
+        }
+
+        if ((entradaExpressao.isOkButtonPressed() || entradaExpressao.isEnterKeyPressed())) {
+            expressao = entradaExpressao.getValue();
+            entradaExpressao.hide();
+            if (expressao != null && !expressao.isBlank()) {
+                try {
+                    raiz = construirArvore(expressao.replaceAll("\\s+", ""));
+                    mensagem = "Expressão carregada com sucesso.";
+                } catch (Exception e) {
+                    mensagem = "Erro ao processar a expressão!";
+                    raiz = null;
+                }
+            } else {
+                mensagem = "Nenhuma expressão informada.";
+            }
+        }
     }
 
     @Override
     public void draw() {
-        
-        clearBackground(WHITE);
-        
+
         beginMode2D(camera);
-        if (raiz == null) {
-            String text = "Pressione Enter para inserir uma expressao";
-            double tx = getScreenWidth() / 2.0 - measureText(text, 26) / 2.0;
-            drawText(text, (int) tx, getScreenHeight() / 2, 26, BLACK);
-        } else {
-            double rootX = getScreenWidth() / 2.0;
-            double espacamentoInicial = getScreenWidth() / 6.0;
-            drawTree(raiz, rootX, 280, espacamentoInicial);
+        drawText("Visualizador de Árvore Sintática", new Vector2(50, 40), 22, BLACK);
+        btnInserirExpressao.draw();
+        entradaExpressao.draw();
+
+        drawText("Expressão: " + (expressao.isEmpty() ? "Nenhuma" : expressao), new Vector2(50, 180), 18, BLACK);
+        drawText("Mensagem: " + mensagem, new Vector2(50, 210), 16, BLACK);
+
+        if (raiz != null) {
+            drawArvore(raiz, getWidth() / 2.0, 300, getWidth() / 4.0);
         }
-        
-        endMode2D();
-        int margemEsquerda = 25;
-        int margemInferior = 35;
-
-        String texto2 = "Pressione Enter para digitar uma nova expressão";
-        String texto1 = !expressaoAtual.isBlank()
-                ? "Resultado: \"" + expressaoAtual + "\""
-                : "Nenhuma expressão registrada";
-
-        int tamTexto1 = 20;
-        int tamTexto2 = 18;
-
-        int yTexto2 = getScreenHeight() - margemInferior;
-        int yTexto1 = yTexto2 - tamTexto1 - 6;
-
-        drawText(texto1, margemEsquerda, yTexto1, tamTexto1, BLACK);
-        drawText(texto2, margemEsquerda, yTexto2, tamTexto2, BLACK);
-     
     }
 
-    private void drawTree(Expressao e, double x, double y, double espacamento) {
-        if (e == null) {
+    private static class Node {
+
+        String valor;
+        Node esq;
+        Node dir;
+
+        Node(String v) {
+            valor = v;
+        }
+    }
+
+    private void drawArvore(Node n, double x, double y, double offsetX) {
+        if (n == null) {
             return;
         }
 
-        double raio = 18.0;
-        int fontSize = 28;
+        double yOffset = 80;
 
-        if (e instanceof Numero num) {
-            fillCircle(x, y, raio, Color.WHITE);
-            drawCircle(x, y, raio, Color.BLACK);
-            drawTextCentralizado(num.getToken().valor(), x, y + 6, fontSize, BLACK);
-        } else if (e instanceof ExpressaoBinaria bin) {
-            fillCircle(x, y, raio, Color.WHITE);
-            drawCircle(x, y, raio, Color.BLACK);
-            drawTextCentralizado(bin.getOperador().valor(), x, y + 6, fontSize, BLACK);
+        // ligações entre nós
+        if (n.esq != null) {
+            drawLine(new Vector2(x, y), new Vector2(x - offsetX, y + yOffset), BLACK);
+        }
+        if (n.dir != null) {
+            drawLine(new Vector2(x, y), new Vector2(x + offsetX, y + yOffset), BLACK);
+        }
 
-            double childY = y + 100.0;
+        // nó atual
+        fillCircle(new Vector2(x, y), 25, new Color(200, 230, 255));
+        drawCircle(new Vector2(x, y), 25, BLACK);
+        drawTextCentered(n.valor, new Vector2(x, y - 8), 20, BLACK);
 
-            if (bin.getOperandoE() != null) {
-                double childX = x - espacamento;
-                drawLine(x, y + raio, childX, childY - raio, BLACK);
-                drawTree(bin.getOperandoE(), childX, childY, espacamento / 1.6);
-            }
+        // recursão
+        drawArvore(n.esq, x - offsetX, y + yOffset, offsetX / 2);
+        drawArvore(n.dir, x + offsetX, y + yOffset, offsetX / 2);
+    }
 
-            if (bin.getOperandoD() != null) {
-                double childX = x + espacamento;
-                drawLine(x, y + raio, childX, childY - raio, BLACK);
-                drawTree(bin.getOperandoD(), childX, childY, espacamento / 1.6);
+    private Node construirArvore(String expr) {
+        return parseExpr(expr);
+    }
+
+    private Node parseExpr(String expr) {
+
+        expr = removeParentesesExternos(expr);
+
+        int nivel = 0;
+        int pos = -1;
+
+        for (int i = expr.length() - 1; i >= 0; i--) {
+            char c = expr.charAt(i);
+            if (c == ')') {
+                nivel++;
+            } else if (c == '(') {
+                nivel--;
+            } else if ((c == '+' || c == '-') && nivel == 0) {
+                pos = i;
+                break;
             }
         }
+
+        if (pos != -1) {
+            Node n = new Node(String.valueOf(expr.charAt(pos)));
+            n.esq = parseExpr(expr.substring(0, pos));
+            n.dir = parseExpr(expr.substring(pos + 1));
+            return n;
+        }
+
+        nivel = 0;
+        for (int i = expr.length() - 1; i >= 0; i--) {
+            char c = expr.charAt(i);
+            if (c == ')') {
+                nivel++;
+            } else if (c == '(') {
+                nivel--;
+            } else if ((c == '*' || c == '/') && nivel == 0) {
+                pos = i;
+                break;
+            }
+        }
+
+        if (pos != -1) {
+            Node n = new Node(String.valueOf(expr.charAt(pos)));
+            n.esq = parseExpr(expr.substring(0, pos));
+            n.dir = parseExpr(expr.substring(pos + 1));
+            return n;
+        }
+
+        if (expr.startsWith("(") && expr.endsWith(")")) {
+            return parseExpr(expr.substring(1, expr.length() - 1));
+        }
+
+        return new Node(expr);
     }
 
-    private void drawTextCentralizado(String text, double x, double y, int size, Color color) {
-        double largura = measureText(text, size);
-        int tx = (int) Math.round(x - largura / 2.0);
-        int ty = (int) Math.round(y + size / 3.0 - 2);
-        drawText(text, tx, ty - 22, size, color);
+    private String removeParentesesExternos(String expr) {
+        while (expr.startsWith("(") && expr.endsWith(")") && corresponde(expr)) {
+            expr = expr.substring(1, expr.length() - 1);
+        }
+        return expr;
     }
-    
-    private void atualizarCamera(){
+
+    private boolean corresponde(String expr) {
+        int nivel = 0;
+        for (int i = 0; i < expr.length(); i++) {
+            char c = expr.charAt(i);
+            if (c == '(') {
+                nivel++;
+            } else if (c == ')') {
+                nivel--;
+            }
+            if (nivel == 0 && i < expr.length() - 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void drawTextCentered(String text, Vector2 pos, int size, Color color) {
+        double largura = measureText(text, size);
+        int tx = (int) (pos.x - largura / 2);
+        int ty = (int) (pos.y + size / 3.0);
+        drawText(text, tx, ty, size, color);
+    }
+
+    private void atualizarCamera() {
         camera.target.x = foco.pos.x;
         camera.target.y = foco.pos.y;
-        camera.offset.x = 0;
-        camera.offset.y = 0;
+        camera.offset.x = getScreenWidth() / 2;
+        camera.offset.y = getScreenHeight() / 2;
     }
 
     public static void main(String[] args) {
         new Main();
     }
+
 }
