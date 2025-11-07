@@ -19,6 +19,8 @@ public class Main extends EngineFrame {
     private Node raiz;
     private String mensagem;
 
+    private boolean exibirInput;
+
     public Main() {
         super(
                 800,
@@ -51,6 +53,7 @@ public class Main extends EngineFrame {
 
         camera = new Camera2D();
         focoBoundary = new Rectangle(0, 0, getScreenWidth(), getScreenHeight());
+        exibirInput = false;
     }
 
     @Override
@@ -59,20 +62,22 @@ public class Main extends EngineFrame {
         btnInserirExpressao.update(delta);
         entradaExpressao.update(delta);
 
-        foco.update(delta, focoBoundary, this);
+        if (!exibirInput) {
+            foco.update(delta, focoBoundary, this);
 
-        if (isKeyDown(KEY_DELETE)) {
-            camera.rotation--;
-        } else if (isKeyDown(KEY_PAGE_DOWN)) {
-            camera.rotation++;
-        }
+            if (isKeyDown(KEY_DELETE)) {
+                camera.rotation--;
+            } else if (isKeyDown(KEY_PAGE_DOWN)) {
+                camera.rotation++;
+            }
 
-        if (isKeyDown(KEY_KP_ADD) || isKeyDown(KEY_EQUAL)) {
-            camera.zoom += 0.01;
-        } else if (isKeyDown(KEY_KP_SUBTRACT) || isKeyDown(KEY_MINUS)) {
-            camera.zoom -= 0.01;
-            if (camera.zoom < 0.1) {
-                camera.zoom = 0.1;
+            if (isKeyDown(KEY_KP_ADD) || isKeyDown(KEY_EQUAL)) {
+                camera.zoom += 0.01;
+            } else if (isKeyDown(KEY_KP_SUBTRACT) || isKeyDown(KEY_MINUS)) {
+                camera.zoom -= 0.01;
+                if (camera.zoom < 0.1) {
+                    camera.zoom = 0.1;
+                }
             }
         }
 
@@ -86,12 +91,17 @@ public class Main extends EngineFrame {
         atualizarCamera();
 
         if (btnInserirExpressao.isMousePressed()) {
+            // limpa a que foi desenhada anteriormente
+            raiz = null;  
+            
             entradaExpressao.show();
+            exibirInput = true;
         }
 
         if ((entradaExpressao.isOkButtonPressed() || entradaExpressao.isEnterKeyPressed())) {
             expressao = entradaExpressao.getValue();
             entradaExpressao.hide();
+            exibirInput = false;
             if (expressao != null && !expressao.isBlank()) {
                 try {
                     raiz = construirArvore(expressao.replaceAll("\\s+", ""));
@@ -103,6 +113,9 @@ public class Main extends EngineFrame {
             } else {
                 mensagem = "Nenhuma expressão informada.";
             }
+        } else if ((entradaExpressao.isCancelButtonPressed()) || entradaExpressao.isCloseButtonPressed()) {
+            entradaExpressao.hide();
+            exibirInput = false;
         }
     }
 
@@ -110,18 +123,20 @@ public class Main extends EngineFrame {
     public void draw() {
 
         beginMode2D(camera);
+
+        if (raiz != null) {
+            drawArvore(raiz, getWidth() / 2.0, 300, getWidth() / 4.0);
+        }
+        endMode2D();
+
         drawText("Visualizador de Árvore Sintática", new Vector2(50, 40), 22, BLACK);
         btnInserirExpressao.draw();
 
         drawText("Expressão: " + (expressao.isEmpty() ? "Nenhuma" : expressao), new Vector2(50, 180), 18, BLACK);
         drawText("" + mensagem, new Vector2(50, 210), 16, BLACK);
 
-        if (raiz != null) {
-            drawArvore(raiz, getWidth() / 2.0, 300, getWidth() / 4.0);
-        }
-       
         entradaExpressao.draw();
-        endMode2D();
+
     }
 
     private static class Node {
